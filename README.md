@@ -1,1 +1,1 @@
-# image-similarity-search
+# Image Similarity Search
