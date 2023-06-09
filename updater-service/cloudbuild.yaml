@@ -1,0 +1,12 @@
+steps:
+# Build the container image
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['build', '-t', 'gcr.io/sascha-playground-doit/image-similarity-updater', '.']
+# Push the container image to Container Registry
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['push', 'gcr.io/sascha-playground-doit/image-similarity-updater']
+# Deploy container image to Cloud Run
+- name: 'gcr.io/cloud-builders/gcloud'
+  args: ['run', 'deploy', 'image-similarity-updater', '--image', 'gcr.io/sascha-playground-doit/image-similarity-updater', '--allow-unauthenticated','--vpc-connector', 'recommendation-engine', '--region', 'us-central1', '--platform', 'managed']
+images:
+- gcr.io/sascha-playground-doit/image-similarity-updater
