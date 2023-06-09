@@ -96,7 +96,7 @@ gcloud builds submit --config cloudbuild.yaml
 
 ## Usage
 
-### Add new images to the vector
+### Add new images to Matching Engine (Vector Database)
 To add new images to the vector simply upload them to the bucket that is defined in the updater service. 
 
 ### 
