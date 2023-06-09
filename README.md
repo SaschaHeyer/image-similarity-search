@@ -99,5 +99,5 @@ gcloud builds submit --config cloudbuild.yaml
 ### Add new images to Matching Engine (Vector Database)
 To add new images to the vector simply upload them to the bucket that is defined in the updater service. 
 
-### 
+### POC UI
 The POC contains a UI that is deployed to Cloud Run. It provides an interface to upload an image and shows matching images returned from the index. 
