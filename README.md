@@ -101,3 +101,5 @@ To add new images to the vector simply upload them to the bucket that is defined
 
 ### POC UI
 The POC contains a UI that is deployed to Cloud Run. It provides an interface to upload an image and shows matching images returned from the index. 
+
+https://image-similarity-ui-xgdxnb6fdq-uc.a.run.app

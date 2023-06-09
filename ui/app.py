@@ -61,4 +61,4 @@ from itertools import cycle
 
 cols = cycle(st.columns(4)) 
 for idx, filteredImage in enumerate(signed_images):
-    next(cols).image(filteredImage)
+    next(cols).image(filteredImage,caption=id_list[idx])

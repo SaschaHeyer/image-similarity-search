@@ -38,7 +38,7 @@ async def predict(request: Request):
     matches = index_endpoint.match(
       deployed_index_id="image_similarity_vpc",
       queries=[embedding],
-      num_neighbors=10
+      num_neighbors=20
     )
 
     print('got matches')

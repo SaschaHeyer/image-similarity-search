@@ -20,7 +20,7 @@ aiplatform.init(
 endpoint = aiplatform.Endpoint("projects/234439745674/locations/us-central1/endpoints/7365738345634201600")
 
 # TODO read this from the env variables
-INDEX_RESOURCE_NAME = "projects/234439745674/locations/us-central1/indexes/8838129550761132032"
+INDEX_RESOURCE_NAME = "projects/234439745674/locations/us-central1/indexes/8666289077479276544"
 
 index_client = aiplatform_v1.IndexServiceClient(
     client_options=dict(api_endpoint="{}-aiplatform.googleapis.com".format('us-central1'))
