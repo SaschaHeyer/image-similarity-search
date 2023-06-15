@@ -107,3 +107,4 @@ https://image-similarity-ui-xgdxnb6fdq-uc.a.run.app
 ## Possible Optimization
 * Use Google Cloud Vertex AI Image Embedding API instead of the custom build embedding model hosted on Vertex AI
 * Use Google Cloud Workflows to orchestrate the Cloud Run Services
+* Use Google Cloud Workflows for the Cloud Storage trigger
