@@ -103,3 +103,7 @@ To add new images to the vector simply upload them to the bucket that is defined
 The POC contains a UI that is deployed to Cloud Run. It provides an interface to upload an image and shows matching images returned from the index. 
 
 https://image-similarity-ui-xgdxnb6fdq-uc.a.run.app
+
+## Possible Optimization
+* Use Google Cloud Vertex AI Image Embedding API instead of the custom build embedding model hosted on Vertex AI
+* Use Google Cloud Workflows to orchestrate the Cloud Run Services
