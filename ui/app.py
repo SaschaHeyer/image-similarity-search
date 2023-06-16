@@ -6,6 +6,7 @@ import requests
 
 
 st.title("Image Similarity Search")
+st.title("Demo offline")
 st.markdown("This application is a POC that show the functionality around image similarity search")
 
 uploaded_file = st.file_uploader("Choose an image...", type="jpg")
