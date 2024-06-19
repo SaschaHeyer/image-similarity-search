@@ -32,22 +32,20 @@ if uploaded_file is not None:
 
     # Measure response time
     start_time = time.time()
-    #print('response start')
     response = requests.post('https://image-similarity-query-xgdxnb6fdq-uc.a.run.app/query', json={"image": base64_encoded_image})
     response_time = time.time() - start_time
-    st.text(response)
-    #print(response.text)
-    #print('response received')
     st.write(f"Response time: {response_time:.2f} seconds")
     
-    #if response.status_code == 200:
-    #    st.success(f"The image was successfully uploaded: {response.text}")
-    #else:
-    #    st.error(f"The image upload failed: {response.text}")
+    if response.status_code != 200:
+        st.error(f"Error: {response.text}")
+        st.stop()
 
 st.title('Matching Images')
 
 if response is not None:
+    response_json = response.json()
+
+    # Initialize Google Cloud Storage client
     storage_client = storage.Client.from_service_account_json('sascha-playground-doit-a4e18c1806bd.json')
     bucket = storage_client.get_bucket('doit-image-similarity')
 
@@ -56,9 +54,11 @@ if response is not None:
     similarities_exact = []
     similarities_similar = []
 
-    response_json = response.json()
-    id_list = [item['id'] for item in response_json]
-    similarities = [item['similarity'] for item in response_json]
+    matches = response_json.get("formatted_response", [])
+    multimodal_result = response_json.get("multimodal_result", {}).get("matching_product_urls", [])
+
+    id_list = [item['id'] for item in matches]
+    similarities = [item['similarity'] for item in matches]
 
     for idx, id in enumerate(id_list):
         blob = bucket.blob(id)
@@ -70,18 +70,40 @@ if response is not None:
             signed_images_similar.append(signed_url)
             similarities_similar.append(similarities[idx])
 
-    col1, col2 = st.columns(2)
+    # Generate signed URLs for generated AI matches
+    signed_images_gen_ai = []
+    gen_ai_paths = []
+    for url in multimodal_result:
+        blob = storage.Blob.from_string(url, client=storage_client)
+        signed_url = blob.generate_signed_url(timedelta(hours=1), method='GET')
+        signed_images_gen_ai.append(signed_url)
+        gen_ai_paths.append(url)
+
+    col1, col2, col3 = st.columns(3)
 
     with col1:
         st.header("Exact Matches")
+        st.markdown("Exact matches with a similarity score of 1.0")
         cols = cycle(st.columns(4))
         for idx, filteredImage in enumerate(signed_images_exact):
             col = next(cols)
             col.image(filteredImage, caption=f"ID: {id_list[idx][-20:]} \nSimilarity: {similarities_exact[idx]:.2f}", use_column_width=True)
 
     with col2:
+        st.header("Matches refined using Gemini model")
+        st.markdown("Matches returned from the similarity search are passed to Googles multimodal model. This step can be extended to use additional product meta data if available.")
+        cols = cycle(st.columns(4))
+        for idx, filteredImage in enumerate(signed_images_gen_ai):
+            col = next(cols)
+            col.image(filteredImage, caption=f"Path: {gen_ai_paths[idx][-20:]}", use_column_width=True)
+
+
+    with col3:
         st.header("Similar Matches")
+        st.markdown("Vector Search results")
         cols = cycle(st.columns(4))
         for idx, filteredImage in enumerate(signed_images_similar):
             col = next(cols)
             col.image(filteredImage, caption=f"ID: {id_list[idx + len(signed_images_exact)][-20:]} \nSimilarity: {similarities_similar[idx]:.2f}", use_column_width=True)
+
+   
