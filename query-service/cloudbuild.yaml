@@ -7,6 +7,6 @@ steps:
   args: ['push', 'gcr.io/sascha-playground-doit/image-similarity-query']
 # Deploy container image to Cloud Run
 - name: 'gcr.io/cloud-builders/gcloud'
-  args: ['run', 'deploy', 'image-similarity-query', '--image', 'gcr.io/sascha-playground-doit/image-similarity-query', '--allow-unauthenticated', '--vpc-connector', 'recommendation-engine', '--region', 'us-central1', '--platform', 'managed']
+  args: ['run', 'deploy', 'image-similarity-query', '--image', 'gcr.io/sascha-playground-doit/image-similarity-query', '--allow-unauthenticated', '--region', 'us-central1', '--platform', 'managed']
 images:
 - gcr.io/sascha-playground-doit/image-similarity-query

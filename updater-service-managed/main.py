@@ -5,8 +5,12 @@ import base64
 from flask import Flask, request
 from google.cloud import aiplatform_v1
 from google.cloud import aiplatform
+
+
 import vertexai
 from vertexai.vision_models import Image, MultiModalEmbeddingModel
+
+vertexai.init(project='sascha-playground-doit', location="us-central1")
 
 
 app = Flask(__name__)
@@ -19,10 +23,8 @@ aiplatform.init(
     location=os.environ.get("REGION")
 )
 
-endpoint = aiplatform.Endpoint("projects/234439745674/locations/us-central1/endpoints/7365738345634201600")
-
 # TODO read this from the env variables
-INDEX_RESOURCE_NAME = "projects/234439745674/locations/us-central1/indexes/8666289077479276544"
+INDEX_RESOURCE_NAME = "projects/234439745674/locations/us-central1/indexes/7906759639151149056"
 
 index_client = aiplatform_v1.IndexServiceClient(
     client_options=dict(api_endpoint="{}-aiplatform.googleapis.com".format('us-central1'))
@@ -43,19 +45,19 @@ def index():
 
     print("Image path:", image_path)
 
-    image = read_image_from_storage("doit-image-similarity", image_path)
-    image_base64 = base64.b64encode(image).decode()
+    image_bytes = read_image_from_storage("doit-image-similarity", image_path)
+    #image_base64 = base64.b64encode(image).decode()
     
-    instances = [{"image": image_base64}]
-    
-    result = endpoint.predict(instances=instances)
-    embedding = result[0][0]['embedding']
-    print(embedding)
-    print('got embedding')
+    image = Image(image_bytes)
+    model = MultiModalEmbeddingModel.from_pretrained("multimodalembedding")
+    embeddings = model.get_embeddings(
+        image=image
+    )
+    print(f"Image Embedding: {embeddings.image_embedding}")
 
     insert_datapoints_payload = aiplatform_v1.IndexDatapoint(
       datapoint_id=image_path,
-      feature_vector=embedding
+      feature_vector=embeddings.image_embedding
     )
     upsert_request = aiplatform_v1.UpsertDatapointsRequest(
       index=INDEX_RESOURCE_NAME, datapoints=[insert_datapoints_payload]
