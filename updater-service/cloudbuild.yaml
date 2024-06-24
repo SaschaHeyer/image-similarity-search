@@ -1,12 +1,26 @@
 steps:
 # Build the container image
 - name: 'gcr.io/cloud-builders/docker'
-  args: ['build', '-t', 'gcr.io/sascha-playground-doit/image-similarity-updater', '.']
+  args: ['build', '-t', 'gcr.io/$PROJECT_ID/image-similarity-updater', '.']
 # Push the container image to Container Registry
 - name: 'gcr.io/cloud-builders/docker'
-  args: ['push', 'gcr.io/sascha-playground-doit/image-similarity-updater']
+  args: ['push', 'gcr.io/$PROJECT_ID/image-similarity-updater']
 # Deploy container image to Cloud Run
-- name: 'gcr.io/cloud-builders/gcloud'
-  args: ['run', 'deploy', 'image-similarity-updater', '--image', 'gcr.io/sascha-playground-doit/image-similarity-updater', '--allow-unauthenticated','--vpc-connector', 'recommendation-engine', '--region', 'us-central1', '--platform', 'managed']
+#- name: 'gcr.io/cloud-builders/gcloud'
+#  args: [
+#    'run', 'deploy', 'image-similarity-updater',
+#    '--image', 'gcr.io/$PROJECT_ID/image-similarity-updater',
+#    '--allow-unauthenticated',
+#    '--region', 'us-central1',
+#    '--platform', 'managed',
+#    '--update-env-vars',
+#    'PROJECT=$_PROJECT,REGION=$_REGION,INDEX_RESOURCE_NAME=$_INDEX_RESOURCE_NAME,BUCKET_NAME=$_BUCKET_NAME'
+#  ]
 images:
-- gcr.io/sascha-playground-doit/image-similarity-updater
+- gcr.io/$PROJECT_ID/image-similarity-updater
+
+#substitutions:
+#  _PROJECT: "sascha-playground-doit"
+#  _REGION: "us-central1"
+#  _INDEX_RESOURCE_NAME: "projects/234439745674/locations/us-central1/indexes/7906759639151149056"
+#  _BUCKET_NAME: "doit-image-similarity"

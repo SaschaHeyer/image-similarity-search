@@ -48,7 +48,7 @@ async def predict(request: Request):
 
     image_base64 = body["image"]
     threshold = body.get("threshold", 0.7)  # Default threshold is 0.7
-    limit = body.get("limit", 3)
+    limit = body.get("limit", 5)
     
     image_bytes = base64.b64decode(image_base64)
     image = Image(image_bytes)

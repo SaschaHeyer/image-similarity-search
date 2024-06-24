@@ -1,5 +1,4 @@
 import streamlit as st
-import io
 from PIL import Image
 import base64
 import requests
@@ -7,8 +6,13 @@ from google.cloud import storage
 from datetime import timedelta
 from itertools import cycle
 import time
+import os
 
-# Set page layout to wide
+# Get environment variables
+API_URL = os.getenv('API_URL')
+SERVICE_ACCOUNT_JSON = os.getenv('SERVICE_ACCOUNT_JSON')
+BUCKET_NAME = os.getenv('BUCKET_NAME')
+
 st.set_page_config(layout="wide")
 
 st.title("DoiT Find Similar Products Demo")
@@ -32,7 +36,7 @@ if uploaded_file is not None:
 
     # Measure response time
     start_time = time.time()
-    response = requests.post('https://image-similarity-query-xgdxnb6fdq-uc.a.run.app/query', json={"image": base64_encoded_image})
+    response = requests.post(f'{API_URL}/query', json={"image": base64_encoded_image})
     response_time = time.time() - start_time
     st.write(f"Response time: {response_time:.2f} seconds")
     
@@ -46,8 +50,8 @@ if response is not None:
     response_json = response.json()
 
     # Initialize Google Cloud Storage client
-    storage_client = storage.Client.from_service_account_json('sascha-playground-doit-a4e18c1806bd.json')
-    bucket = storage_client.get_bucket('doit-image-similarity')
+    storage_client = storage.Client.from_service_account_json(SERVICE_ACCOUNT_JSON)
+    bucket = storage_client.get_bucket(BUCKET_NAME)
 
     signed_images_exact = []
     signed_images_similar = []
@@ -91,7 +95,7 @@ if response is not None:
 
     with col2:
         st.header("Matches refined using Gemini model")
-        st.markdown("Matches returned from the similarity search are passed to Googles multimodal model. This step can be extended to use additional product meta data if available.")
+        st.markdown("Matches returned from the similarity search are passed to Googles multimodal model. This step can be extended to use additional product meta data if available. Using the top 5 results found my Vector Search.")
         cols = cycle(st.columns(4))
         for idx, filteredImage in enumerate(signed_images_gen_ai):
             col = next(cols)
