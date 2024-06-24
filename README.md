@@ -1,4 +1,6 @@
 # Image Similarity Search
+![](documentation/images/demo.png)
+
 
 ## Architecture
 
@@ -10,7 +12,7 @@ The architecture can scale to any number of requests and is built on top of
 * Cloud Eventarc
 * Cloud Storage
 
-![](images/architecture.png)
+![](documentation/images/architecture.png)
 
 ## Setup
 
