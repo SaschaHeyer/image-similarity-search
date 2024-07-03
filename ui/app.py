@@ -50,9 +50,7 @@ if uploaded_file is not None:
         st.error(f"Error: {response.text}")
         st.stop()
 elif text_query is not None:
-    st.write("text search")
     response = requests.post(f'{API_URL}/query', json={"text": text_query})
-    st.write(response)
 
 st.title('Matching Images')
     

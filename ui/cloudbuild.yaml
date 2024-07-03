@@ -6,18 +6,18 @@ steps:
 - name: 'gcr.io/cloud-builders/docker'
   args: ['push', 'gcr.io/$PROJECT_ID/image-similarity-ui']
 # Deploy container image to Cloud Run
-#- name: 'gcr.io/cloud-builders/gcloud'
-#  args: [
-#    'run', 'deploy', 'image-similarity-ui',
-#    '--image', 'gcr.io/$PROJECT_ID/image-similarity-ui',
-#    '--region', 'us-central1',
-#    '--allow-unauthenticated',
-#    '--platform', 'managed',
-#    '--memory', '500Mi',
-#    '--max-instances', '5',
-#    '--update-env-vars',
-#    'API_URL=$_API_URL,SERVICE_ACCOUNT_JSON=$_SERVICE_ACCOUNT_JSON,BUCKET_NAME=$_BUCKET_NAME'
-#  ]
+- name: 'gcr.io/cloud-builders/gcloud'
+  args: [
+    'run', 'deploy', 'image-similarity-ui',
+    '--image', 'gcr.io/$PROJECT_ID/image-similarity-ui',
+    '--region', 'us-central1',
+    '--allow-unauthenticated',
+    '--platform', 'managed',
+    '--memory', '500Mi',
+    '--max-instances', '5',
+    '--update-env-vars',
+    'API_URL=$_API_URL,SERVICE_ACCOUNT_JSON=$_SERVICE_ACCOUNT_JSON,BUCKET_NAME=$_BUCKET_NAME'
+  ]
 images:
 - gcr.io/$PROJECT_ID/image-similarity-ui
 
