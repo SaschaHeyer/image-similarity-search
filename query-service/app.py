@@ -42,24 +42,31 @@ index_endpoint = aiplatform.MatchingEngineIndexEndpoint(index_endpoint_name=ENDP
 
 @app.post('/query')
 async def predict(request: Request):
-    print('image received')
     body = await request.json()
     print(body)
 
-    image_base64 = body["image"]
-    threshold = body.get("threshold", 0.7)  # Default threshold is 0.7
+    image_base64 = body.get("image", None)
+    text_query = body.get("text", None)
+    threshold = body.get("threshold", 0.01)  # Default threshold is 0.7
     limit = body.get("limit", 5)
     
-    image_bytes = base64.b64decode(image_base64)
-    image = Image(image_bytes)
-   
-    embeddings = model.get_embeddings(image=image)
-    print(f"Image Embedding: {embeddings.image_embedding}")
+    if image_base64:
+        image_bytes = base64.b64decode(image_base64)
+        image = Image(image_bytes)
+    
+        embeddings = model.get_embeddings(image=image)
+        embeddings = embeddings.image_embedding
+        print(f"Image Embedding: {embeddings}")
+        
+    elif text_query:
+        embeddings = model.get_embeddings(contextual_text=text_query)
+        embeddings = embeddings.text_embedding
+        print(f"Text Embedding: {embeddings}")
     
     start_time = datetime.datetime.now()
     matches = index_endpoint.find_neighbors(
         deployed_index_id="product_similarity_1",
-        queries=[embeddings.image_embedding],
+        queries=[embeddings],
         num_neighbors=10,
     )
     print(matches)

@@ -7,6 +7,11 @@ from datetime import timedelta
 from itertools import cycle
 import time
 import os
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
+
 
 # Get environment variables
 API_URL = os.getenv('API_URL')
@@ -16,7 +21,7 @@ BUCKET_NAME = os.getenv('BUCKET_NAME')
 st.set_page_config(layout="wide")
 
 st.title("DoiT Find Similar Products Demo")
-st.markdown("This application is a POC that shows the functionality around image similarity search")
+st.markdown("This application is a POC that shows the functionality around image similarity and text to image search")
 
 # Create two columns for the upload section
 upload_col, image_col = st.columns([1, 1])
@@ -24,6 +29,7 @@ upload_col, image_col = st.columns([1, 1])
 with upload_col:
     uploaded_file = st.file_uploader("Choose an image...", type="jpg")
 
+    text_query = st.text_input("If you don't have an image you can enter text to search...", "")
 response = None
 
 if uploaded_file is not None:
@@ -43,8 +49,13 @@ if uploaded_file is not None:
     if response.status_code != 200:
         st.error(f"Error: {response.text}")
         st.stop()
+elif text_query is not None:
+    st.write("text search")
+    response = requests.post(f'{API_URL}/query', json={"text": text_query})
+    st.write(response)
 
 st.title('Matching Images')
+    
 
 if response is not None:
     response_json = response.json()
@@ -87,7 +98,7 @@ if response is not None:
 
     with col1:
         st.header("Exact Matches")
-        st.markdown("Exact matches with a similarity score of 1.0")
+        st.markdown("Exact matches with a similarity score of 1.0. Only used when searching based on an image")
         cols = cycle(st.columns(4))
         for idx, filteredImage in enumerate(signed_images_exact):
             col = next(cols)
