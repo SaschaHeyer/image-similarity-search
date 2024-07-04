@@ -104,11 +104,24 @@ async def predict(request: Request):
             parts.append(f"({image_uri})")
             parts.append(Part.from_uri(uri=image_uri, mime_type="image/jpeg"))
 
-        text1 = """We have a product database and we need to find similar products. Given the following product images, return the ones that are the same.
-        Return a JSON in the following format:
-        {
-            "matching_product_urls": []
-        }"""
+        prompt = None
+
+        if image_base64:
+            print("using image prompt")
+            prompt = f"""We have a product database and we need to find similar products. Given the following product images, return the ones that are the same.
+            Return a JSON in the following format:
+            {{
+                "matching_product_urls": []
+            }}"""
+        elif text_query is not None:
+            print("using text prompt")
+            prompt = f"""We have a product database and we need to find similar products. Given the following product images and search query, return the ones that are the same.
+            search query: {text_query}
+            
+            Return a JSON in the following format:
+            {{
+                "matching_product_urls": []
+            }}"""
 
         generation_config = {
             "max_output_tokens": 8192,
@@ -122,8 +135,8 @@ async def predict(request: Request):
             generative_models.HarmCategory.HARM_CATEGORY_HARASSMENT: generative_models.HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
         }
 
-        # Add text1 as the final part in the parts list
-        parts.append(text1)
+        # Add prompt as the final part in the parts list
+        parts.append(prompt)
 
         start_time2 = datetime.datetime.now()
         responses = gen_model.generate_content(
