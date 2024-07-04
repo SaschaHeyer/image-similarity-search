@@ -12,7 +12,6 @@ from dotenv import load_dotenv
 # Load environment variables from .env file
 load_dotenv()
 
-
 # Get environment variables
 API_URL = os.getenv('API_URL')
 SERVICE_ACCOUNT_JSON = os.getenv('SERVICE_ACCOUNT_JSON')
@@ -28,10 +27,13 @@ upload_col, image_col = st.columns([1, 1])
 
 with upload_col:
     uploaded_file = st.file_uploader("Choose an image...", type="jpg")
-
     text_query = st.text_input("If you don't have an image you can enter text to search...", "")
-response = None
+    debug_mode = st.checkbox("Enable Debugging")
 
+response = None
+response_time = None
+
+# Handle image upload case
 if uploaded_file is not None:
     with image_col:
         image = Image.open(uploaded_file)
@@ -44,19 +46,45 @@ if uploaded_file is not None:
     start_time = time.time()
     response = requests.post(f'{API_URL}/query', json={"image": base64_encoded_image})
     response_time = time.time() - start_time
-    st.write(f"Response time: {response_time:.2f} seconds")
-    
+
     if response.status_code != 200:
         st.error(f"Error: {response.text}")
         st.stop()
-elif text_query is not None:
+
+# Handle text query case
+elif text_query and text_query.strip():
+    # Measure response time
+    start_time = time.time()
     response = requests.post(f'{API_URL}/query', json={"text": text_query})
+    response_time = time.time() - start_time
 
-st.title('Matching Images')
-    
+    if response.status_code != 200:
+        st.error(f"Error: {response.text}")
+        st.stop()
 
+# Process the response if available
 if response is not None:
     response_json = response.json()
+    embedding_time = response_json["response_times"]["embedding"]
+    vector_search_time = response_json["response_times"]["vector_search"]
+    multimodal_re_ranking_time = response_json["response_times"]["multimodal_re_ranking"]
+    
+    # Display individual response times in one row
+    col1, col2, col3 = st.columns([1, 1, 1])
+    with col1:
+        st.metric(label="Embedding Time", value=f"{embedding_time:.2f} ms")
+    with col2:
+        st.metric(label="Vector Search Time", value=f"{vector_search_time:.2f} ms")
+    with col3:
+        st.metric(label="Multimodal Re-ranking Time", value=f"{multimodal_re_ranking_time:.2f} ms")
+    
+
+    # Conditionally print response JSON if debug mode is enabled
+    if debug_mode:
+        st.subheader("Response JSON")
+        st.json(response_json)
+
+    st.title('Matching Images')
 
     # Initialize Google Cloud Storage client
     storage_client = storage.Client.from_service_account_json(SERVICE_ACCOUNT_JSON)
@@ -110,7 +138,6 @@ if response is not None:
             col = next(cols)
             col.image(filteredImage, caption=f"Path: {gen_ai_paths[idx][-20:]}", use_column_width=True)
 
-
     with col3:
         st.header("Similar Matches")
         st.markdown("Vector Search results")
@@ -118,5 +145,3 @@ if response is not None:
         for idx, filteredImage in enumerate(signed_images_similar):
             col = next(cols)
             col.image(filteredImage, caption=f"ID: {id_list[idx + len(signed_images_exact)][-20:]} \nSimilarity: {similarities_similar[idx]:.2f}", use_column_width=True)
-
-   

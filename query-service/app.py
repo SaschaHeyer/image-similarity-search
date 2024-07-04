@@ -19,7 +19,7 @@ import vertexai.preview.generative_models as generative_models
 vertexai.init(project='sascha-playground-doit', location="us-central1")
 
 model = MultiModalEmbeddingModel.from_pretrained("multimodalembedding")
-gen_model = GenerativeModel("gemini-1.5-pro-001")
+gen_model = GenerativeModel("gemini-1.5-flash-001")
 
 app = FastAPI(title="Image Similarity Query Service")
 
@@ -42,14 +42,19 @@ index_endpoint = aiplatform.MatchingEngineIndexEndpoint(index_endpoint_name=ENDP
 
 @app.post('/query')
 async def predict(request: Request):
+    print("QEURYYYY####")
     body = await request.json()
-    print(body)
+    #print(body)
 
     image_base64 = body.get("image", None)
     text_query = body.get("text", None)
     threshold = body.get("threshold", 0.01)  # Default threshold is 0.7
     limit = body.get("limit", 5)
+   
+    print(image_base64 is None)
+   
     
+    start_time0 = datetime.datetime.now() 
     if image_base64:
         image_bytes = base64.b64decode(image_base64)
         image = Image(image_bytes)
@@ -58,10 +63,15 @@ async def predict(request: Request):
         embeddings = embeddings.image_embedding
         print(f"Image Embedding: {embeddings}")
         
-    elif text_query:
+    elif text_query is not None:
         embeddings = model.get_embeddings(contextual_text=text_query)
         embeddings = embeddings.text_embedding
         print(f"Text Embedding: {embeddings}")
+    end_time0 = datetime.datetime.now()
+    time_diff = (end_time0 - start_time0)
+    latency_embedding = time_diff.total_seconds() * 1000
+    print(f'latency_multimodal_ranking {latency_embedding}')
+    
     
     start_time = datetime.datetime.now()
     matches = index_endpoint.find_neighbors(
@@ -115,17 +125,21 @@ async def predict(request: Request):
         # Add text1 as the final part in the parts list
         parts.append(text1)
 
+        start_time2 = datetime.datetime.now()
         responses = gen_model.generate_content(
             parts,
             generation_config=generation_config,
             safety_settings=safety_settings,
-            stream=True,
+            stream=False,
         )
-
-        multimodal_result = ""
-        for response in responses:
-            multimodal_result += response.text
-
+        
+        end_time2 = datetime.datetime.now()
+        time_diff = (end_time2 - start_time2)
+        latency_multimodal_ranking = time_diff.total_seconds() * 1000
+        print(f'latency_multimodal_ranking {latency_multimodal_ranking}')
+        
+        multimodal_result = responses.candidates[0].content.parts[0].text
+        
         # Use regex to extract JSON content between the first '{' and the last '}'
         json_match = re.search(r'\{.*\}', multimodal_result, re.DOTALL)
         if json_match:
@@ -139,9 +153,16 @@ async def predict(request: Request):
         except json.JSONDecodeError:
             multimodal_result_json = {"error": "Invalid JSON response from multimodal model"}
 
+       
+
         return JSONResponse(content={
             "formatted_response": formated_response,
-            "multimodal_result": multimodal_result_json
+            "multimodal_result": multimodal_result_json,
+            "response_times": {
+                "embedding": latency_embedding,
+                "vector_search": latency_matching,
+                "multimodal_re_ranking": latency_multimodal_ranking
+            }
         })
 
     return JSONResponse(content={
