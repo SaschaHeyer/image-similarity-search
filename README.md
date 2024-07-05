@@ -81,13 +81,23 @@ gcloud builds submit --config cloudbuild.yaml
 ### Setup Eventarc
 
 ````
-gcloud eventarc triggers create image-similarity-updater-trigger \
-  --location=$REGION \
-  --destination-run-service=$CLOUD_RUN_SERVICE_NAME \
-  --destination-run-region=$REGION \
+gcloud eventarc triggers create image-similarity-updater-trigger-upload \
+  --location=us-central1 \
+  --destination-run-service=image-similarity-updater \
+  --destination-run-region=us-central1 \
   --event-filters="type=google.cloud.storage.object.v1.finalized" \
-  --event-filters="bucket=$BUCKET_NAME" \
-  --service-account=$EVENTARC_SERVICE_ACCOUNT
+  --event-filters="bucket=doit-image-similarity" \
+  --service-account=234439745674-compute@developer.gserviceaccount.com
+````
+
+````
+gcloud eventarc triggers create image-similarity-updater-trigger-delete \
+  --location=us-central1 \
+  --destination-run-service=image-similarity-updater \
+  --destination-run-region=us-central1 \
+  --event-filters="type=google.cloud.storage.object.v1.deleted" \
+  --event-filters="bucket=doit-image-similarity" \
+  --service-account=234439745674-compute@developer.gserviceaccount.com
 ````
 
 ## Usage
@@ -146,5 +156,5 @@ else:
 ## Possible Optimization
 * **DONE** ~~Use Google Cloud Vertex AI Image Embedding API instead of the custom build embedding model hosted on Vertex AI~~
 * Add terraform for easy 2 min setup, instead of running multiple gcloud commands.
-* Delete images from vector database when removed from cloud storage
+* **DONE** ~~Delete images from vector database when removed from cloud storage~~
 * Add controlled generation for the Gemini response. https://medium.com/google-cloud/vertex-ai-controlled-generation-with-gemini-8a60d0581f62

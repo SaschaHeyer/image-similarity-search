@@ -26,7 +26,7 @@ st.markdown("This application is a POC that shows the functionality around image
 upload_col, image_col = st.columns([1, 1])
 
 with upload_col:
-    uploaded_file = st.file_uploader("Choose an image...", type="jpg")
+    uploaded_file = st.file_uploader("Choose an image...", type=["jpg", "png"])
     text_query = st.text_input("If you don't have an image you can enter text to search...", "")
     debug_mode = st.checkbox("Enable Debugging")
 

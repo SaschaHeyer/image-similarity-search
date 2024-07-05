@@ -29,32 +29,40 @@ index_client = aiplatform_v1.IndexServiceClient(
 
 @app.route('/', methods=['POST'])
 def index():
-    print(request.get_json())
-    bucket = request.headers.get('ce-subject')
-    print(f"Detected change in Cloud Storage bucket: {bucket}")
+    event_data = request.get_json()
+    event_type = request.headers.get('ce-type')
+    bucket = event_data['bucket']
+    name = event_data['name']
+    print(f"Detected change in Cloud Storage bucket: {bucket}, file: {name}")
 
-    image_path = "/".join(bucket.split("/")[1:])
-    print("Image path:", image_path)
+    if event_type == 'google.cloud.storage.object.v1.finalized':
+        # Handle new file upload
+        image_bytes = read_image_from_storage(bucket, name)
+        image = Image(image_bytes)
+        model = MultiModalEmbeddingModel.from_pretrained("multimodalembedding")
+        embeddings = model.get_embeddings(image=image)
+        print(f"Image Embedding: {embeddings.image_embedding}")
 
-    image_bytes = read_image_from_storage(os.getenv("BUCKET_NAME"), image_path)
-    
-    image = Image(image_bytes)
-    model = MultiModalEmbeddingModel.from_pretrained("multimodalembedding")
-    embeddings = model.get_embeddings(image=image)
-    print(f"Image Embedding: {embeddings.image_embedding}")
+        insert_datapoints_payload = aiplatform_v1.IndexDatapoint(
+            datapoint_id=name,
+            feature_vector=embeddings.image_embedding
+        )
+        upsert_request = aiplatform_v1.UpsertDatapointsRequest(
+            index=INDEX_RESOURCE_NAME, datapoints=[insert_datapoints_payload]
+        )
+        index_client.upsert_datapoints(request=upsert_request)
+        print('Upsert complete')
 
-    insert_datapoints_payload = aiplatform_v1.IndexDatapoint(
-      datapoint_id=image_path,
-      feature_vector=embeddings.image_embedding
-    )
-    upsert_request = aiplatform_v1.UpsertDatapointsRequest(
-      index=INDEX_RESOURCE_NAME, datapoints=[insert_datapoints_payload]
-    )
+    elif event_type == 'google.cloud.storage.object.v1.deleted':
+        # Handle file deletion
+        remove_datapoints_request = aiplatform_v1.RemoveDatapointsRequest(
+            index=INDEX_RESOURCE_NAME, datapoint_ids=[name]
+        )
+        index_client.remove_datapoints(request=remove_datapoints_request)
+        print('Remove complete')
 
-    index_client.upsert_datapoints(request=upsert_request)
-    print('upsert complete')
+    return (f"Detected change in Cloud Storage bucket: {bucket}, file: {name}", 200)
 
-    return (f"Detected change in Cloud Storage bucket: {bucket}", 200)
 
 def read_image_from_storage(bucket_name, file_path):
     bucket = storage_client.get_bucket(bucket_name)
