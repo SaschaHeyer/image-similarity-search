@@ -11,7 +11,7 @@ def encode_image_to_base64(image_path):
 api_url = "http://0.0.0.0:8000/query"
 
 # Path to the image you want to send
-image_path = "/Users/sascha/Desktop/development/image-similarity-search/query-service/4018065.jpeg"
+image_path = "/Users/sascha/Desktop/development/image-similarity-search/products/png/1a4117fbcf8144d5aedad35331fed3c0.png"
 
 # Encode the image
 encoded_image = encode_image_to_base64(image_path)
@@ -19,7 +19,8 @@ encoded_image = encode_image_to_base64(image_path)
 # Create the payload
 payload = {
     "image": encoded_image,
-    "threshold": 0.7  # Optional, you can set a different value if needed
+    "threshold": 0.7,  # Optional, defined the similarity score threshold for images to be defined as similar
+    "rerankerLimit": 5 # Optional, defines the number of vector matches passed to the multimodal re-ranker 
 }
 
 # Set the headers

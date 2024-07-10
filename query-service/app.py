@@ -7,19 +7,18 @@ import datetime
 import json  # Import the json module
 import re  # Import the regex module
 
-from google.cloud import aiplatform_v1
 from google.cloud import aiplatform
 from google.cloud import storage  # Import the storage client
 
 import vertexai
 from vertexai.vision_models import Image, MultiModalEmbeddingModel
-from vertexai.generative_models import GenerativeModel, Part, FinishReason
-import vertexai.preview.generative_models as generative_models
+from vertexai.generative_models import GenerativeModel, Part, GenerationConfig
+
 
 vertexai.init(project='sascha-playground-doit', location="us-central1")
 
-model = MultiModalEmbeddingModel.from_pretrained("multimodalembedding")
-gen_model = GenerativeModel("gemini-1.5-flash-001")
+embedding_model = MultiModalEmbeddingModel.from_pretrained("multimodalembedding")
+model = GenerativeModel("gemini-1.5-pro-001")
 
 app = FastAPI(title="Image Similarity Query Service")
 
@@ -32,59 +31,45 @@ aiplatform.init(
     location='us-central1'
 )
 
-index_client = aiplatform_v1.IndexServiceClient(
-    client_options=dict(api_endpoint="{}-aiplatform.googleapis.com".format(os.environ.get("PROJECT")))
-)
-
 # TODO read this from the env variables
 ENDPOINT_RESOURCE_NAME = "projects/234439745674/locations/us-central1/indexEndpoints/845467267155099648"
 index_endpoint = aiplatform.MatchingEngineIndexEndpoint(index_endpoint_name=ENDPOINT_RESOURCE_NAME)
 
 @app.post('/query')
 async def predict(request: Request):
-    print("QEURYYYY####")
     body = await request.json()
-    #print(body)
-
+    
     image_base64 = body.get("image", None)
     text_query = body.get("text", None)
     threshold = body.get("threshold", 0.01)  # Default threshold is 0.7
-    limit = body.get("limit", 5)
-   
-    print(image_base64 is None)
-   
-    
+    reranker_limit = body.get("rerankerLimit", 5)
+
     start_time0 = datetime.datetime.now() 
     if image_base64:
         image_bytes = base64.b64decode(image_base64)
         image = Image(image_bytes)
     
-        embeddings = model.get_embeddings(image=image)
+        embeddings = embedding_model.get_embeddings(image=image)
         embeddings = embeddings.image_embedding
-        print(f"Image Embedding: {embeddings}")
         
     elif text_query is not None:
-        embeddings = model.get_embeddings(contextual_text=text_query)
+        embeddings = embedding_model.get_embeddings(contextual_text=text_query)
         embeddings = embeddings.text_embedding
-        print(f"Text Embedding: {embeddings}")
     end_time0 = datetime.datetime.now()
     time_diff = (end_time0 - start_time0)
     latency_embedding = time_diff.total_seconds() * 1000
-    print(f'latency_multimodal_ranking {latency_embedding}')
     
     
     start_time = datetime.datetime.now()
     matches = index_endpoint.find_neighbors(
         deployed_index_id="product_similarity_1",
         queries=[embeddings],
-        num_neighbors=10,
+        num_neighbors=10, #TODO add this as parameter
     )
-    print(matches)
     
     end_time = datetime.datetime.now()
     time_diff = (end_time - start_time)
     latency_matching = time_diff.total_seconds() * 1000
-    print(f'latency matching {latency_matching}')
 
     formated_response = []
     for match in matches[0]:
@@ -97,7 +82,7 @@ async def predict(request: Request):
     if len(filtered_matches) > 0:
         parts = []
         for idx, match in enumerate(filtered_matches):
-            if idx >= limit:  
+            if idx >= reranker_limit:  
                 break
             # Use GCS URI directly
             image_uri = f"gs://doit-image-similarity/{match['id']}"
@@ -107,42 +92,41 @@ async def predict(request: Request):
         prompt = None
 
         if image_base64:
-            print("using image prompt")
             prompt = f"""We have a product database and we need to find similar products. Given the following product images, return the ones that are the same.
-            Return a JSON in the following format:
-            {{
-                "matching_product_urls": []
-            }}"""
+            """
         elif text_query is not None:
-            print("using text prompt")
             prompt = f"""We have a product database and we need to find similar products. Given the following product images and search query, return the ones that are the same.
             search query: {text_query}
-            
-            Return a JSON in the following format:
-            {{
-                "matching_product_urls": []
-            }}"""
+            """
 
-        generation_config = {
-            "max_output_tokens": 8192,
-            "top_p": 0.95,
+        response_schema= {
+            "type": "object",
+            "properties": {
+                "matching_product_urls": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            },
+            "required": ["matching_product_urls"]
         }
 
-        safety_settings = {
-            generative_models.HarmCategory.HARM_CATEGORY_HATE_SPEECH: generative_models.HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
-            generative_models.HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: generative_models.HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
-            generative_models.HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT: generative_models.HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
-            generative_models.HarmCategory.HARM_CATEGORY_HARASSMENT: generative_models.HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
-        }
+        generation_config = GenerationConfig(
+            temperature=1.0,
+            max_output_tokens=8192,
+            response_mime_type="application/json",
+            response_schema=response_schema
+        )
 
         # Add prompt as the final part in the parts list
         parts.append(prompt)
-
+    
+        
         start_time2 = datetime.datetime.now()
-        responses = gen_model.generate_content(
+        responses = model.generate_content(
             parts,
             generation_config=generation_config,
-            safety_settings=safety_settings,
             stream=False,
         )
         
