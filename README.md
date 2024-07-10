@@ -157,4 +157,5 @@ else:
 * **DONE** ~~Use Google Cloud Vertex AI Image Embedding API instead of the custom build embedding model hosted on Vertex AI~~
 * Add terraform for easy 2 min setup, instead of running multiple gcloud commands.
 * **DONE** ~~Delete images from vector database when removed from cloud storage~~
-* Add controlled generation for the Gemini response. https://medium.com/google-cloud/vertex-ai-controlled-generation-with-gemini-8a60d0581f62
+* **Done** ~~Add controlled generation for the Gemini response. https://medium.com/google-cloud/vertex-ai-controlled-generation-with-gemini-8a60d0581f62~~
+* Add parameter to have multimodal-ranking optional
