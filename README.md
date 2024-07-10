@@ -7,7 +7,7 @@
 The architecture can scale to any number of requests and is built on top of 
 
 * Cloud Run 
-* Vertex AI Gemini
+* Vertex AI Gemini (Multimodal) as re-ranker
 * Vertex AI Vector Search (previously named Matching Engine)
 * Cloud Eventarc
 * Cloud Storage
