@@ -16,6 +16,9 @@ The architecture can scale to any number of requests and is built on top of
 
 ## Setup
 
+The project contains a terraform folder, this is still work in progress and not yet finalized. 
+Feel free to contribute. 
+
 ### Enabled APIs
 
 ````
