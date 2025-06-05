@@ -17,7 +17,7 @@ from vertexai.generative_models import GenerativeModel, Part, GenerationConfig
 vertexai.init(project='sascha-playground-doit', location="us-central1")
 
 embedding_model = MultiModalEmbeddingModel.from_pretrained("multimodalembedding")
-model = GenerativeModel("gemini-1.5-pro-001")
+model = GenerativeModel("gemini-2.5-flash-preview-05-20")
 
 app = FastAPI(title="Image Similarity Query Service")
 
